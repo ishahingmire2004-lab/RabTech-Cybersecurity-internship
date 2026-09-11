@@ -1,14 +1,23 @@
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-import os
+﻿from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes
 
-key = AESGCM.generate_key(bit_length=256)
-aesgcm = AESGCM(key)
-nonce = os.urandom(12)
-plaintext = b"RabTech Academy - Secret Data"
+private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+public_key = private_key.public_key()
+message = b"RabTech Academy - Authenticated Message"
 
-ciphertext = aesgcm.encrypt(nonce, plaintext, None)
-decrypted = aesgcm.decrypt(nonce, ciphertext, None)
+signature = private_key.sign(
+    message,
+    padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+    hashes.SHA256()
+)
 
-print(f"Key: {key.hex()}")
-print(f"Encrypted: {ciphertext.hex()}")
-print(f"Decrypted: {decrypted.decode()}")
+print(f"Message: {message.decode()}")
+print(f"Signature: {signature.hex()[:80]}...")
+
+public_key.verify(
+    signature,
+    message,
+    padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+    hashes.SHA256()
+)
+print("Verification: SUCCESS - Signature is valid!")
